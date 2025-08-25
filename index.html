@@ -256,44 +256,67 @@
       });
   </script>
   <script>
-  function isTikTokBrowser() {
-    const ua = navigator.userAgent || "";
-    return (
-      /tiktok/i.test(ua) ||
-      document.referrer.includes("tiktok.com") ||
-      typeof window.TikTokWebView !== "undefined"
-    );
-  }
+function isTikTokBrowser() {
+  const ua = navigator.userAgent || "";
+  return (
+    /tiktok/i.test(ua) ||
+    document.referrer.includes("tiktok.com") ||
+    typeof window.TikTokWebView !== "undefined"
+  );
+}
 
-  function openInDefaultBrowser(url) {
-    // Redirect out of TikTok’s webview using intent (Android) or itms-apps (iOS)
-    const isAndroid = /android/i.test(navigator.userAgent);
-    if (isAndroid) {
-      window.location.href = "intent://" + url.replace(/^https?:\/\//, "") +
-        "#Intent;scheme=https;package=com.android.chrome;end";
-    } else {
-      // Fallback for iOS (Safari will open)
-      window.open(url, "_blank");
+function isAndroid() {
+  return /android/i.test(navigator.userAgent);
+}
+
+function isIOS() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function openInDefaultBrowser(url) {
+  if (isAndroid()) {
+    // Force Chrome with intent://
+    window.location.href = "intent://" + url.replace(/^https?:\/\//, "") +
+      "#Intent;scheme=https;package=com.android.chrome;end";
+  } else if (isIOS()) {
+    // Try to open Safari
+    window.open(url, "_blank");
+  } else {
+    // Fallback
+    window.location.href = url;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (isTikTokBrowser()) {
+    const offersDiv = document.getElementById("offers");
+    const header = document.getElementById("main-header");
+    if (offersDiv) offersDiv.innerHTML = "";
+    if (header) header.style.display = "none";
+
+    if (isAndroid()) {
+      // Auto-redirect on Android
+      openInDefaultBrowser(window.location.href);
+    } else if (isIOS()) {
+      // Show button + instructions for iOS
+      document.body.innerHTML = `
+        <div style="padding:20px;text-align:center;">
+          <h2>⚠️ Open in Safari</h2>
+          <p>TikTok’s browser may not work correctly. Please tap below:</p>
+          <a href="#" onclick="openInDefaultBrowser(window.location.href)"
+             style="display:inline-block;padding:16px 24px;
+                    background:#007AFF;color:white;
+                    border-radius:12px;text-decoration:none;
+                    font-weight:bold;">
+             🚀 Open in Safari
+          </a>
+          <p style="margin-top:12px;font-size:14px;color:#666;">
+            Or tap the <b>•••</b> menu → <b>Open in Safari</b>
+          </p>
+        </div>`;
     }
   }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    if (isTikTokBrowser()) {
-      const offersDiv = document.getElementById("offers");
-      offersDiv.innerHTML = ""; // clear existing offers
-
-      const btn = document.createElement("a");
-      btn.className = "btn";
-      btn.textContent = "JOIN GIVEAWAY";
-      btn.href = "#";
-      btn.onclick = (e) => {
-        e.preventDefault();
-        openInDefaultBrowser(window.location.href);
-      };
-
-      offersDiv.appendChild(btn);
-    }
-  });
+});
 </script>
 </body>
 </html>
